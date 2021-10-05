@@ -1,14 +1,24 @@
 package com.game.mine.domain.builder;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+
+import org.springframework.stereotype.Component;
 
 import com.game.mine.domain.entity.Field;
 import com.game.mine.domain.entity.MineField;
+import com.game.mine.domain.entity.PositionField;
+import com.game.mine.domain.entity.enums.Status;
 
+@Component
 public class MineFieldBuilder {
     private Integer columns;
     private Integer rows;
     private Integer numberMines;
+    private List<PositionField> positionsMine;
+
+    public MineFieldBuilder() { this.positionsMine = new ArrayList<>(); }
 
     public MineFieldBuilder columns(Integer number) {
         this.columns = number;
@@ -29,7 +39,7 @@ public class MineFieldBuilder {
         Field[][] mineField = new Field[rows][columns];
         initiateMineFied(mineField);
         putMineOnField(mineField);
-        return new MineField(mineField);
+        return new MineField(mineField, Status.PLAYING, positionsMine);
     }
 
     private void putMineOnField(Field[][] mineField) {
@@ -47,6 +57,7 @@ public class MineFieldBuilder {
 
             if(mineField[rowSelected][columnSelected].isMine() != true) {
                 mineField[rowSelected][columnSelected].setMine(true);
+                positionsMine.add(new PositionField(rowSelected, columnSelected));
             } else {
                 mine--;
             }
