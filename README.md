@@ -44,3 +44,7 @@ Exemple field where zero is just position on field and 9 position of mine: \
 0 0 0 0 0 9 0 0 0 0 \
 0 0 0 0 0 0 0 0 0 0 \
 0 0 0 0 0 0 0 0 0 0 
+
+
+Access the swagger localy:
+http://localhost:8080/swagger-ui/#/
