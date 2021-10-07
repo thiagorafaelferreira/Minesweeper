@@ -1,39 +1,64 @@
 package com.game.mine.domain.service;
 
+
+
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.IntStream;
+
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import com.game.mine.domain.builder.MineFieldBuilder;
-import com.game.mine.domain.entity.MineField;
+import com.game.mine.domain.converter.MineFieldConverter;
+import com.game.mine.domain.entity.Field;
+import com.game.mine.domain.entity.GameMatch;
 import com.game.mine.domain.entity.enums.Status;
+import com.game.mine.infrastracture.repository.GameMatchRepository;
+import com.game.mine.infrastracture.repository.MineFieldRepository;
 
 public class MineServiceTest {
 
+    private MineFieldRepository mineFieldRepositoryMock;
+    private GameMatchRepository gameMatchRepository;
+    private MineService mineService;
+    private GameMatch gameMatch;
+
+    @BeforeEach
+    public void init() {
+        MineFieldRepository mineFieldRepositoryMock = Mockito.mock(MineFieldRepository.class);
+        GameMatchRepository gameMatchRepositoryMock = Mockito.mock(GameMatchRepository.class);
+        mineService = new MineService(new MineFieldBuilder(), mineFieldRepositoryMock, gameMatchRepositoryMock);
+        gameMatch = mineService.createGameMatch(10, 10, 3);
+        when(gameMatchRepositoryMock.findByUserId(anyString())).thenReturn(gameMatch);
+        List<Field> fields = MineFieldConverter.fieldMatrizToList(gameMatch.getMineField());
+        when(mineFieldRepositoryMock.findByUserId(anyString())).thenReturn(fields);
+    }
+
     @Test
     public void creatingFieldTest() {
-        MineService mineService = new MineService(new MineFieldBuilder());
-        MineField mineField = mineService.createMineField(10, 10, 3);
-        displayMinField(mineField);
+        displayMinField(gameMatch);
     }
 
     @Test
     public void creatingFieldPositionsTest() {
-        MineService mineService = new MineService(new MineFieldBuilder());
-        MineField mineField = mineService.createMineField(10, 10, 3);
-        displayMinFieldPositions(mineField);
+        displayMinFieldPositions(gameMatch);
     }
 
     @Test
     public void creatingFieldShowingMinesTest() {
-        MineService mineService = new MineService(new MineFieldBuilder());
-        MineField mineField = mineService.createMineField(10, 10, 3);
-        displayMinesOnMineField(mineField);
+        displayMinesOnMineField(gameMatch);
     }
 
-    private void displayMinFieldPositions(MineField mineField) {
-        for(int row = 0; row < mineField.getMineField().length; row++) {
+    private void displayMinFieldPositions(GameMatch gameMatch) {
+        for(int row = 0; row < gameMatch.getMineField().length; row++) {
             StringBuffer rowBuffer = new StringBuffer();
-            for(int column = 0; column < mineField.getMineField()[row].length; column++) {
+            for(int column = 0; column < gameMatch.getMineField()[row].length; column++) {
                 rowBuffer.append(row + "" + column + " ");
             }
             System.out.println(rowBuffer);
@@ -41,10 +66,10 @@ public class MineServiceTest {
         System.out.println();
     }
 
-    private void displayMinField(MineField mineField) {
-        for(int row = 0; row < mineField.getMineField().length; row++) {
+    private void displayMinField(GameMatch gameMatch) {
+        for(int row = 0; row < gameMatch.getMineField().length; row++) {
             StringBuffer rowBuffer = new StringBuffer();
-            for(int column = 0; column < mineField.getMineField()[row].length; column++) {
+            for(int column = 0; column < gameMatch.getMineField()[row].length; column++) {
                 rowBuffer.append("0 ");
             }
             System.out.println(rowBuffer);
@@ -52,18 +77,18 @@ public class MineServiceTest {
         System.out.println();
     }
 
-    private void displayMinesOnMineField(MineField mineField) {
-        for(int row = 0; row < mineField.getMineField().length; row++) {
+    private void displayMinesOnMineField(GameMatch gameMatch) {
+        for(int row = 0; row < gameMatch.getMineField().length; row++) {
             StringBuffer rowBuffer = new StringBuffer();
-            for(int column = 0; column < mineField.getMineField()[row].length; column++) {
+            for(int column = 0; column < gameMatch.getMineField()[row].length; column++) {
                 rowBuffer.append(
-                        (mineField.getMineField()[row][column].isMine()
+                        (gameMatch.getMineField()[row][column].isMine()
                                 ? "9 "
                                 : (
-                                        mineField.getMineField()[row][column].isClicked() &&
-                                        mineField.getMineField()[row][column].getDistanceMines() == 0
+                                        gameMatch.getMineField()[row][column].isClicked() &&
+                                        gameMatch.getMineField()[row][column].getMinesArround() == 0
                                                 ? "8"
-                                                : mineField.getMineField()[row][column].getDistanceMines()
+                                                : gameMatch.getMineField()[row][column].getMinesArround()
                                     ) + " "));
             }
             System.out.println(rowBuffer);
@@ -73,23 +98,20 @@ public class MineServiceTest {
 
     @Test
     public void clickPositionThereIsMineTest() {
-        MineService mineService = new MineService(new MineFieldBuilder());
-        MineField mineField = mineService.createMineField(10, 10, 3);
-        mineService.setMineField(mineField);
-        MineField mineFieldResult = mineService.clickPosition(mineField.getPositionsMine().get(0).getRow(),
-                mineField.getPositionsMine().get(0).getColumn());
-        Assertions.assertEquals(Status.GAME_OVER.getValue(), mineField.getStatus().getValue());
+        displayMinesOnMineField(gameMatch);
+        System.out.println(gameMatch.getPositionsMine().get(0).getRow());
+        System.out.println(gameMatch.getPositionsMine().get(0).getColumn());
+
+        GameMatch gameMatchResult = mineService.clickPosition("1fasdf2", gameMatch.getPositionsMine().get(0).getRow(),
+                gameMatch.getPositionsMine().get(0).getColumn());
+        displayMinesOnMineField(gameMatchResult);
+        Assertions.assertEquals(Status.GAME_OVER.getValue(), gameMatch.getStatus().getValue());
     }
 
     @Test
     public void clickPositionTest() {
-        MineService mineService = new MineService(new MineFieldBuilder());
-        MineField mineField = mineService.createMineField(10, 10, 20);
-        mineService.setMineField(mineField);
-        displayMinesOnMineField(mineField);
-        MineField mineFieldResultClick1 = mineService.clickPosition(0, 0);
-        displayMinesOnMineField(mineFieldResultClick1);
-        MineField mineFieldResultClick2 = mineService.clickPosition(1, 7);
-        displayMinesOnMineField(mineFieldResultClick2);
+        displayMinesOnMineField(gameMatch);
+        GameMatch gameMatchResultClick1 = mineService.clickPosition("1fasdf2", 0, 0);
+        displayMinesOnMineField(gameMatchResultClick1);
     }
 }

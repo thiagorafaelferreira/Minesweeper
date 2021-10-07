@@ -7,7 +7,7 @@ import java.util.Random;
 import org.springframework.stereotype.Component;
 
 import com.game.mine.domain.entity.Field;
-import com.game.mine.domain.entity.MineField;
+import com.game.mine.domain.entity.GameMatch;
 import com.game.mine.domain.entity.PositionField;
 import com.game.mine.domain.entity.enums.Status;
 
@@ -35,11 +35,11 @@ public class MineFieldBuilder {
         return this;
     }
 
-    public MineField build() {
+    public GameMatch build() {
         Field[][] mineField = new Field[rows][columns];
         initiateMineFied(mineField);
         putMineOnField(mineField);
-        return new MineField(mineField, Status.PLAYING, positionsMine);
+        return new GameMatch(mineField, Status.PLAYING, positionsMine);
     }
 
     private void putMineOnField(Field[][] mineField) {
@@ -67,7 +67,11 @@ public class MineFieldBuilder {
     private void initiateMineFied(Field[][] mineField) {
         for(int row = 0; row < rows; row++) {
             for(int column = 0; column < columns; column++) {
-                mineField[row][column] = new Field();
+                Field field = new Field();
+                field.setRowPosition(row);
+                field.setColumnPosition(column);
+                field.setMinesArround(0);
+                mineField[row][column] = field;
             }
         }
     }

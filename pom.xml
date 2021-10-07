@@ -98,6 +98,13 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>com/game/mine/application/config/**</exclude>
+						<exclude>com/game/mine/application/entity/**</exclude>
+						<exclude>com/game/mine/domain/entity/**</exclude>
+					</excludes>
+				</configuration>
 				<version>0.8.7</version>
 				<executions>
 					<execution>
