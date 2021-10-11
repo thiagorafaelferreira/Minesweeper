@@ -13,6 +13,7 @@ public class ParametersNewGameRequest {
     private Integer numberRows;
     private Integer numberColumns;
     private Integer numberMinesOnField;
+    private boolean reset;
 
     public Integer totalArea() {
         Integer totalArea = 0;

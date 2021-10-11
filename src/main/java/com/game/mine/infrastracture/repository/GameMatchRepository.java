@@ -6,4 +6,5 @@ import com.game.mine.domain.entity.GameMatch;
 
 public interface GameMatchRepository extends JpaRepository<GameMatch, Integer> {
     GameMatch findByUserId(String userId);
+    void deleteByUserId(String userId);
 }

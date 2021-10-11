@@ -1,13 +1,9 @@
 package com.game.mine.domain.service;
 
-
-
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.ArrayList;
-import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,14 +21,14 @@ import com.game.mine.infrastracture.repository.MineFieldRepository;
 public class MineServiceTest {
 
     private MineFieldRepository mineFieldRepositoryMock;
-    private GameMatchRepository gameMatchRepository;
+    private GameMatchRepository gameMatchRepositoryMock;
     private MineService mineService;
     private GameMatch gameMatch;
 
     @BeforeEach
     public void init() {
-        MineFieldRepository mineFieldRepositoryMock = Mockito.mock(MineFieldRepository.class);
-        GameMatchRepository gameMatchRepositoryMock = Mockito.mock(GameMatchRepository.class);
+        mineFieldRepositoryMock = Mockito.mock(MineFieldRepository.class);
+        gameMatchRepositoryMock = Mockito.mock(GameMatchRepository.class);
         mineService = new MineService(new MineFieldBuilder(), mineFieldRepositoryMock, gameMatchRepositoryMock);
         gameMatch = mineService.createGameMatch(10, 10, 3);
         when(gameMatchRepositoryMock.findByUserId(anyString())).thenReturn(gameMatch);
@@ -97,7 +93,7 @@ public class MineServiceTest {
     }
 
     @Test
-    public void clickPositionThereIsMineTest() {
+    public void clickPositionThereIsMineTest() throws Exception {
         displayMinesOnMineField(gameMatch);
         System.out.println(gameMatch.getPositionsMine().get(0).getRow());
         System.out.println(gameMatch.getPositionsMine().get(0).getColumn());
@@ -109,7 +105,7 @@ public class MineServiceTest {
     }
 
     @Test
-    public void clickPositionTest() {
+    public void clickPositionTest() throws Exception {
         displayMinesOnMineField(gameMatch);
         GameMatch gameMatchResultClick1 = mineService.clickPosition("1fasdf2", 0, 0);
         displayMinesOnMineField(gameMatchResultClick1);

@@ -8,4 +8,5 @@ import com.game.mine.domain.entity.Field;
 
 public interface MineFieldRepository extends JpaRepository<Field, Integer> {
     List<Field> findByUserId(String userId);
+    void deleteByUserId(String userId);
 }

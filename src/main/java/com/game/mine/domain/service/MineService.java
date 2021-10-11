@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.game.mine.domain.builder.MineFieldBuilder;
 import com.game.mine.domain.converter.MineFieldConverter;
@@ -16,16 +18,15 @@ import com.game.mine.domain.entity.PositionField;
 import com.game.mine.domain.entity.enums.Status;
 import com.game.mine.infrastracture.repository.GameMatchRepository;
 import com.game.mine.infrastracture.repository.MineFieldRepository;
-import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class MineService {
 
     private MineFieldBuilder mineFieldBuilder;
     private MineFieldRepository mineFieldRepository;
     private GameMatchRepository gameMatchRepository;
-    @Setter
-    private GameMatch gameMatch;
 
     @Autowired
     public MineService(MineFieldBuilder mineFieldBuilder, MineFieldRepository mineFieldRepository, GameMatchRepository gameMatchRepository) {
@@ -34,10 +35,28 @@ public class MineService {
         this.gameMatchRepository = gameMatchRepository;
     }
 
+    public GameMatch continueGame(String userId) throws Exception {
+        log.info("parameters to flag position userId: {} row: {} column: {} ", userId.toString());
+        GameMatch gameMatchUser = instanciateGameMatchFromDatabase(userId);
+
+        return gameMatchUser;
+    }
+
+    @Transactional
+    public void reset(String userId) {
+        gameMatchRepository.deleteByUserId(userId);
+        mineFieldRepository.deleteByUserId(userId);
+    }
+
     public void saveGameMatch(GameMatch gameMatch) {
         gameMatchRepository.save(gameMatch);
         List<Field> fields = MineFieldConverter.fieldMatrizToList(gameMatch.getMineField());
         fillUserId(gameMatch.getUserId(), fields);
+        mineFieldRepository.saveAll(fields);
+    }
+
+    private void updatePositon(GameMatch gameMatch) {
+        List<Field> fields = MineFieldConverter.fieldMatrizToList(gameMatch.getMineField());
         mineFieldRepository.saveAll(fields);
     }
 
@@ -53,27 +72,41 @@ public class MineService {
                 .build();
     }
 
-    public GameMatch instanciateGameMatchFromDatabase(String userId) {
+    public GameMatch instanciateGameMatchFromDatabase(String userId) throws Exception {
+        log.info("User id used to start game: {} ", userId.toString());
+
         GameMatch gameMatchUser = gameMatchRepository.findByUserId(userId);
+        log.info("finded game match from userId: {} ", gameMatchUser != null);
+        if(gameMatchUser == null) throw new Exception("GAME_OVER");
+
         List<Field> fields = mineFieldRepository.findByUserId(userId);
+        if(fields == null  || fields.size() == 0) throw new Exception("GAME_OVER");
+
         Field[][] mineField = MineFieldConverter.fieldListToMatriz(fields);
         gameMatchUser.setMineField(mineField);
         return gameMatchUser;
     }
 
-    public GameMatch flagPosition(String userId, Integer row, Integer column) {
+    public GameMatch flagPosition(String userId, Integer row, Integer column) throws Exception {
+        log.info("parameters to flag position userId: {} row: {} column: {} ", userId.toString(), row.toString(), column.toString());
         GameMatch gameMatchUser = instanciateGameMatchFromDatabase(userId);
         if(gameMatchUser.getMineField()[row][column].isFlaged() || gameMatchUser.getMineField()[row][column].isClicked())
             return gameMatchUser;
 
         gameMatchUser.getMineField()[row][column].setFlaged(true);
+        updatePositon(gameMatchUser);
         return gameMatchUser;
     }
 
-    public GameMatch clickPosition(String userId, Integer row, Integer column) {
+    public GameMatch clickPosition(String userId, Integer row, Integer column) throws Exception {
+        log.info("parameters to flag position userId: {} row: {} column: {} ", userId.toString(), row.toString(), column.toString());
         GameMatch gameMatchUser = instanciateGameMatchFromDatabase(userId);
         if(gameMatchUser.getMineField()[row][column].isMine()) {
             gameMatchUser.setStatus(Status.GAME_OVER);
+            return gameMatchUser;
+        }
+
+        if(gameMatchUser.getMineField()[row][column].isFlaged()) {
             return gameMatchUser;
         }
 
@@ -81,6 +114,7 @@ public class MineService {
             return gameMatchUser;
 
         analyzeNeighbour(gameMatchUser, row, column, null);
+        updatePositon(gameMatchUser);
         return gameMatchUser;
     }
 
@@ -93,15 +127,13 @@ public class MineService {
 
         AtomicInteger mineArround = new AtomicInteger();
         List<PositionField> positions = new ArrayList<>();
-        identifyAreMineArround(gameMatchAnalyzed, row, column, 1, 1, positions, mineArround);
-        identifyAreMineArround(gameMatchAnalyzed, row, column, 1, 0, positions, mineArround);
-        identifyAreMineArround(gameMatchAnalyzed, row, column, 1, -1, positions, mineArround);
-        identifyAreMineArround(gameMatchAnalyzed, row, column, 0, 1, positions, mineArround);
-        identifyAreMineArround(gameMatchAnalyzed, row, column, 0, -1, positions, mineArround);
-        identifyAreMineArround(gameMatchAnalyzed, row, column, -1, 1, positions, mineArround);
-        identifyAreMineArround(gameMatchAnalyzed, row, column, -1, 0, positions, mineArround);
-        identifyAreMineArround(gameMatchAnalyzed, row, column, -1, -1, positions, mineArround);
-
+        int rangeEnd = 2;
+        int rangeStart = -1;
+        IntStream.range(rangeStart, rangeEnd).forEach(x -> {
+            IntStream.range(rangeStart, rangeEnd).forEach(y ->
+                    identifyAreMineArround(gameMatchAnalyzed, row, column, x, y, positions, mineArround)
+            );
+        });
 
         gameMatchAnalyzed.getMineField()[row][column].setClicked(true);
         gameMatchAnalyzed.getMineField()[row][column].setMinesArround(mineArround.get());
@@ -124,6 +156,8 @@ public class MineService {
     }
 
     public void identifyAreMineArround(GameMatch gameMatch, Integer row, Integer column, Integer moveX, Integer moveY, List<PositionField> positions, AtomicInteger mineArround) {
+        if(moveX == 0 && moveY == 0) return;
+
         Integer rowNeighbour = 0;
         Integer columnNeighbour = 0;
 

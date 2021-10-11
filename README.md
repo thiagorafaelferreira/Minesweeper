@@ -15,6 +15,7 @@ Steps to create project
         * Spring security (Not working properly)
         * Endpoints REST  
         * Swagger 
+        * Sl4j logger
    * Problem solving
       * Understanding of the problem
       * Logical
