@@ -101,17 +101,13 @@ public class MineService {
     public GameMatch clickPosition(String userId, Integer row, Integer column) throws Exception {
         log.info("parameters to flag position userId: {} row: {} column: {} ", userId.toString(), row.toString(), column.toString());
         GameMatch gameMatchUser = instanciateGameMatchFromDatabase(userId);
+        if(gameMatchUser.getMineField()[row][column].isFlaged() || gameMatchUser.getMineField()[row][column].isClicked())
+            return gameMatchUser;
+
         if(gameMatchUser.getMineField()[row][column].isMine()) {
             gameMatchUser.setStatus(Status.GAME_OVER);
             return gameMatchUser;
         }
-
-        if(gameMatchUser.getMineField()[row][column].isFlaged()) {
-            return gameMatchUser;
-        }
-
-        if(gameMatchUser.getMineField()[row][column].isFlaged() || gameMatchUser.getMineField()[row][column].isClicked())
-            return gameMatchUser;
 
         analyzeNeighbour(gameMatchUser, row, column, null);
         updatePositon(gameMatchUser);
